@@ -1,15 +1,8 @@
+//requesting protocol
 const http = require('http');
 const fs = require('fs');
-const query = require('querystring')
-
-// //Read contents of files
-// let index = fs.readFileSync('./public/index.html')
-// let helium = fs.readFileSync('./public/helium.html')
-// let hydrogen = fs.readFileSync('./public/hydrogen.html')
-// let error = fs.readFileSync('./public/404.html')
-// let css = fs.readFileSync('./public/css/styles.css')
-
-
+const query = require('querystring');
+const port = 8080;
 
 function postRespond(elementName, elementSymbol, elementAtomicNumber, elementDescription) {
 return `<!DOCTYPE html>
@@ -24,31 +17,52 @@ return `<!DOCTYPE html>
   <h2>${elementSymbol}</h2>
   <h3>${elementAtomicNumber}</h3>
   <p>${elementDescription}</p>
+  <a href = "/" > back
 </body>
 </html>`
 }
 
-let createPost = postRespond()
+function linkHtml(elementName) {
+  return `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>The Elements</title>
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <h1>The Elements</h1>
+    <h2>These are all the known elements.</h2>
+    <h3>These are 2</h3>
+    <!-- new links -->
+    <ol>
+      <li>
+        <a href="${elementName}.html">${elementName}</a>
+      </li>
+    </ol>
+   `
+}
 
 const server = http.createServer( (req, res) => {
-
-  //
-
-
-
-
 
     // Begining of POST Requests
     if (req.method == 'POST') {
         req.on('data', (data) => {
             let content = data.toString()
             let newData = query.parse(content)
-            console.log('newData: ', newData)
-            console.log("new content: " + content);
             let fileName = req.url;
+            let linkToHtml = fs.readFileSync('./public/index.html', 'utf-8')
+            let updateHtml = linkToHtml.replace(/(<!-- new link -->)/g, linkHtml(newData.elementName))
+            console.log("updateHtml: ", updateHtml)
+            //update new links to HTML
+            fs.writeFile('./public/index.html', linkHtml(newData.elementName), (err) => {
+              if(err) throw err;
+            });
+            //creating new HTML files
             fs.writeFile(`public/${fileName}.html`, postRespond(newData.elementName, newData.elementSymbol,newData.elementAtomicNumber, newData.elementDescription), (err) => {
               if(err) throw err;
             });
+
         });
         res.writeHead(200, {'Content-Type': 'application/json', 'success' : 'true', 'Date' : `${new Date().toUTCString()}`});
     };
@@ -96,11 +110,5 @@ const server = http.createServer( (req, res) => {
   }
 
 });
-
-
-
-
-
-const port = 8080;
 server.listen(port)
 
